@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Move Trainer - Pro HQ</title>
+    <!-- Tailwind CSS (CDN for prototyping) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        chess: {
+                            dark: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#3b82f6',
+                            accentHover: '#2563eb',
+                            text: '#f8fafc',
+                            muted: '#94a3b8',
+                            success: '#10b981',
+                            error: '#ef4444'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chessground CSS & Piece Assets -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@8.3.4/assets/chessground.base.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@8.3.4/assets/chessground.brown.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@8.3.4/assets/chessground.cburnett.min.css">
+    <!-- Custom styling -->
+    <link rel="stylesheet" href="./styles.css?v=4.4">
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            alert("JS ERROR: " + msg + "\nLine: " + line);
+            console.error("DEBUG:", msg, line, error);
+            const errDiv = document.createElement('div');
+            errDiv.style = "position:fixed; top:0; left:0; width:100%; z-index:99999; background:red; color:white; padding: 20px;";
+            errDiv.textContent = "CRASH: " + msg + " (Line " + line + ")";
+            document.body.appendChild(errDiv);
+        };
+        window.addEventListener('unhandledrejection', function (event) {
+            const errDiv = document.createElement('div');
+            errDiv.style = "position:fixed; top:50px; left:0; width:100%; z-index:99999; background:orange; color:white; padding: 20px;";
+            errDiv.textContent = "PROMISE REJECT: " + event.reason;
+            document.body.appendChild(errDiv);
+        });
+    </script>
+</head>
+
+<body class="bg-[#0a0c10] text-slate-200 font-sans h-screen flex overflow-hidden">
+    <!-- VIEW: LANDING -->
+    <div id="view-landing"
+        class="fixed inset-0 w-full h-full flex flex-col items-center justify-center bg-[#0a0c10] overflow-hidden z-[100] transition-opacity duration-500">
+        <!-- Background Decoration -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-blue-600/5 blur-[150px] rounded-full"></div>
+            <div class="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-indigo-600/5 blur-[150px] rounded-full">
+            </div>
+        </div>
+        <div class="relative z-10 max-w-5xl w-full px-8 flex flex-col items-center text-center">
+            <div
+                class="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-10 animate-fade-in">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black text-white tracking-tight mb-8 animate-slide-up">
+                Master Your <span class="text-blue-500">Opening</span>
+            </h1>
+            <p
+                class="text-xl md:text-2xl text-slate-400 max-w-2xl mb-14 leading-relaxed animate-slide-up animation-delay-200">
+                The professional repertoire builder and training suite. Optimized for depth, precision, and speed.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 animate-slide-up animation-delay-400">
+                <button id="btn-landing-start"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-12 py-5 rounded-2xl font-black text-xl shadow-2xl shadow-blue-500/20 transition-all hover:-translate-y-1 active:scale-95">
+                    Launch MoveTrainer
+                </button>
+                <button
+                    class="bg-slate-900 hover:bg-slate-800 text-white px-12 py-5 rounded-2xl font-black text-xl border border-slate-800 transition-all hover:-translate-y-1">
+                    Sign In
+                </button>
+            </div>
+            <!-- Preview Mockup -->
+            <div
+                class="mt-24 w-full max-w-4xl rounded-3xl border border-slate-800 bg-slate-900/30 p-4 shadow-3xl animate-slide-up animation-delay-600">
+                <div
+                    class="aspect-video bg-[#0a0c10] rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800/50 group relative">
+                    <img src="https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=2071&auto=format&fit=crop"
+                        class="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-1000"
+                        alt="Chess Masters">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0a0c10] via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div
+                            class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="white">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+            class="mt-16 text-slate-600 text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in animation-delay-800">
+            Professional Grade Software
+        </div>
+    </div>
+    <!-- SIDEBAR -->
+    <aside id="main-sidebar"
+        class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20 transition-all duration-300">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+                <div
+                    class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white leading-none">MoveTrainer</h1>
+                    <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1 block">Pro
+                        Edition</span>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-grow px-4 flex flex-col gap-1">
+            <button id="nav-dashboard"
+                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-white bg-slate-800 hover:bg-slate-800/80 w-full text-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                My Repertoires
+            </button>
+            <button id="nav-build-repertoire"
+                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-chess-muted hover:text-white hover:bg-slate-800/50 w-full text-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.5" />
+                    <path d="M16 2v4" />
+                    <path d="M21 2v4" />
+                    <path d="M16 10a4 4 0 0 0-8 0" />
+                    <path d="M11 20a4 4 0 0 0 8 0" />
+                    <path d="M12 14v2" />
+                </svg>
+                Builder
+            </button>
+            <button id="nav-add-course"
+                class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-chess-muted hover:text-white hover:bg-slate-800/50 w-full text-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Import PGN
+            </button>
+        </nav>
+        <div class="mt-auto p-4 border-t border-slate-800/50">
+            <button id="nav-settings"
+                class="w-full flex items-center gap-3 px-4 py-3 text-xs font-semibold text-slate-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Settings
+            </button>
+        </div>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="flex-grow relative overflow-y-auto bg-[#0b1120]">
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard"
+            class="absolute inset-0 p-8 w-full max-w-5xl mx-auto flex flex-col transition-opacity duration-300">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold mb-2">My Repertoires</h2>
+                <p class="text-chess-muted">Manage your courses and start your daily spaced repetition reviews.</p>
+            </header>
+            <!-- Daily Review Banner -->
+            <div
+                class="bg-gradient-to-r from-blue-900/50 to-indigo-900/50 border border-blue-500/30 rounded-xl p-6 mb-8 flex justify-between items-center shadow-lg">
+                <div>
+                    <h3 class="text-lg font-bold text-blue-100 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        Daily Review Due
+                    </h3>
+                    <p class="text-blue-200/70 text-sm mt-1">You have <span id="due-count"
+                            class="font-bold text-white">0</span> lines ready for practice.</p>
+                </div>
+                <button id="btn-start-review"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    Start Review Session
+                </button>
+            </div>
+            <!-- Course Grid -->
+            <div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Courses injected by JS -->
+                <div class="p-8 border border-slate-700/50 rounded-xl bg-slate-800/50 col-span-full text-center">
+                    <p class="text-chess-muted mb-4">You haven't added any repertoires yet.</p>
+                    <button id="btn-empty-add"
+                        class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">Create
+                        First Course</button>
+                </div>
+            </div>
+        </div>
+        <!-- VIEW: ADD COURSE -->
+        <div id="view-add-course"
+            class="absolute inset-0 p-8 w-full max-w-3xl mx-auto flex flex-col hidden opacity-0 transition-opacity duration-300">
+            <header class="mb-8">
+                <button id="btn-back-dashboard"
+                    class="mb-4 text-chess-muted hover:text-white flex items-center gap-2 text-sm transition-colors btn-back-dashboard-common">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                    </svg>
+                    Back to Dashboard
+                </button>
+                <h2 class="text-3xl font-bold mb-2">Add New Repertoire</h2>
+                <p class="text-chess-muted">Paste a PGN containing one or multiple variations to create a course.</p>
+            </header>
+            <div class="bg-chess-panel border border-slate-700/50 rounded-xl p-6 flex flex-col gap-5 shadow-xl">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Course Title</label>
+                    <input type="text" id="course-title"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-all"
+                        placeholder="e.g. My Lifetime e4 Repertoire">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">PGN Data</label>
+                    <textarea id="pgn-input"
+                        class="w-full h-48 bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm font-mono text-chess-muted focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-colors resize-none"
+                        placeholder="1. e4 e5 2. Nf3 (2. f4 exf4) 2... Nc6"></textarea>
+                </div>
+                <div class="pt-4 border-t border-slate-700/50 flex justify-end">
+                    <button id="btn-import-save"
+                        class="bg-chess-success hover:bg-emerald-500 text-white font-semibold py-2.5 px-8 rounded-lg transition-transform active:scale-95 shadow-lg shadow-emerald-500/20">
+                        Parse & Save Course
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- VIEW: COURSE DETAILS -->
+        <div id="view-course-details"
+            class="absolute inset-0 p-8 w-full max-w-4xl mx-auto flex flex-col hidden opacity-0 transition-opacity duration-300">
+            <header class="mb-8 flex justify-between items-start">
+                <div>
+                    <button
+                        class="mb-4 text-chess-muted hover:text-white flex items-center gap-2 text-sm transition-colors btn-back-dashboard-common">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                    <h2 id="details-course-title" class="text-3xl font-bold mb-2 text-white">Course Title</h2>
+                    <p id="details-course-stats" class="text-chess-muted">0 variations</p>
+                </div>
+                <div class="flex gap-3">
+                    <button id="btn-details-study"
+                        class="bg-chess-accent hover:bg-chess-accentHover px-6 py-2.5 rounded-lg text-white font-semibold shadow-lg transition-colors flex items-center justify-center min-w-[140px]">
+                        Study Course
+                    </button>
+                    <button id="btn-details-delete"
+                        class="px-4 py-2.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-colors"
+                        title="Delete Course">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+            <div
+                class="bg-chess-panel border border-slate-700/50 rounded-xl overflow-hidden shadow-xl flex-grow flex flex-col">
+                <div class="bg-slate-800/80 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-200">Variations in this course</h3>
+                </div>
+                <div id="details-lines-list" class="flex-grow overflow-y-auto p-4 space-y-2">
+                    <!-- Lines injected here -->
+                </div>
+            </div>
+        </div>
+        <!-- VIEW: BUILD REPERTOIRE (Tree Builder) -->
+        <div id="view-build-repertoire"
+            class="absolute inset-0 p-4 md:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full hidden opacity-0 transition-opacity duration-300">
+            <header class="flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-4">
+                    <button
+                        class="text-chess-muted hover:text-white flex items-center gap-2 text-sm transition-colors btn-back-dashboard-common">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12" />
+                            <polyline points="12 19 5 12 12 5" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white leading-tight">Repertoire Builder</h2>
+                        <p class="text-chess-muted text-xs">Build your tree move-by-move. Legal moves are now enabled.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <select id="builder-color"
+                        class="bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 transition-colors">
+                        <option value="white">White Repertoire</option>
+                        <option value="black">Black Repertoire</option>
+                    </select>
+                    <button id="btn-builder-save"
+                        class="bg-blue-600 hover:bg-blue-500 px-6 py-2.5 rounded-xl text-white font-bold shadow-lg transition-all flex items-center gap-2 text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Save
+                    </button>
+                </div>
+            </header>
+            <div class="flex flex-col lg:flex-row gap-8 flex-grow overflow-hidden">
+                <!-- Left: Board -->
+                <div
+                    class="flex-grow flex items-center justify-center p-4 bg-slate-900 shadow-inner rounded-3xl border border-slate-800/50">
+                    <div
+                        class="w-full max-w-[500px] aspect-square relative drop-shadow-2xl rounded-sm overflow-hidden border-4 border-slate-700/50 bg-[#c0b090]">
+                        <div id="builder-board" class="w-full h-full blue"></div>
+                    </div>
+                </div>
+                <!-- Right: Tree Info & Suggestions -->
+                <div class="w-full lg:w-[400px] flex flex-col gap-6 overflow-hidden">
+                    <!-- Tree Meta Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col gap-5">
+                        <div>
+                            <label
+                                class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Project
+                                Name</label>
+                            <input id="builder-title" type="text" placeholder="e.g. Sicilian Najdorf Mastery"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors text-sm">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Variations</h4>
+                            <div id="builder-variations-count" class="text-xl font-bold text-white">0</div>
+                        </div>
+                        <div id="builder-move-list"
+                            class="bg-slate-950 rounded-xl p-4 min-h-[80px] max-h-[160px] overflow-y-auto text-sm font-mono text-blue-400 border border-slate-800 flex flex-wrap gap-2 content-start leading-relaxed shadow-inner">
+                            <span class="italic text-slate-600">Start with 1. e4...</span>
+                        </div>
+                        <button id="btn-builder-reset"
+                            class="text-[10px] font-bold uppercase tracking-widest text-red-500/80 hover:text-red-400 transition-colors flex items-center justify-center gap-2 py-2 border border-red-500/10 rounded-xl hover:bg-red-500/5">
+                            Reset Tree
+                        </button>
+                    </div>
+                    <!-- Lichess Suggestions Card -->
+                    <div
+                        class="bg-slate-900 border border-slate-800 rounded-3xl flex flex-col flex-grow overflow-hidden">
+                        <div
+                            class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/10">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                Pro Suggestions
+                            </h4>
+                            <div
+                                class="px-2 py-0.5 rounded bg-blue-900/40 text-[8px] font-bold text-blue-400 uppercase border border-blue-500/20">
+                                Lichess Database</div>
+                        </div>
+                        <div id="builder-suggestions" class="flex-grow overflow-y-auto p-4 space-y-2">
+                            <div class="text-center py-10">
+                                <p class="text-xs text-slate-600 px-4">Make a move to see recommendations from millions
+                                    of master games.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- VIEW: TRAINING / BOARD -->
+        <div id="view-training"
+            class="absolute inset-0 p-4 md:p-8 flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full hidden opacity-0 transition-opacity duration-300">
+            <button id="btn-exit-training"
+                class="absolute top-4 left-4 md:top-8 md:left-8 z-10 bg-slate-800/80 hover:bg-slate-700 text-white p-2 rounded-full border border-slate-600 backdrop-blur-sm transition-colors group"
+                title="Exit Training">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="group-hover:-translate-x-1 transition-transform">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+            </button>
+            <!-- Left Panel: Chessboard -->
+            <div class="flex-grow flex flex-col items-center justify-center mt-8 md:mt-0">
+                <div
+                    class="w-full max-w-[600px] aspect-square relative drop-shadow-2xl rounded-sm overflow-hidden border-4 border-slate-700/50 bg-[#c0b090]">
+                    <div id="board" class="w-full h-full blue"></div>
+                </div>
+                <!-- Training Feedback Toast -->
+                <div id="feedback-panel" class="mt-8 transition-all duration-300 opacity-0 transform translate-y-4">
+                    <div
+                        class="bg-chess-panel border border-chess-accent/30 rounded-lg px-6 py-4 shadow-lg text-center min-w-[300px]">
+                        <h3 id="feedback-message" class="text-lg font-semibold text-chess-accent">Ready to train</h3>
+                        <p id="feedback-subtext" class="text-sm text-chess-muted mt-1">Follow the arrows.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Right Panel: Controls & Flow -->
+            <div class="w-full md:w-96 flex flex-col gap-6 max-h-full">
+                <!-- Training Control Card -->
+                <div
+                    class="bg-chess-panel rounded-xl shadow-xl border border-slate-700/50 p-6 flex flex-col gap-4 flex-grow relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-lg font-semibold truncate pr-4" id="training-course-title">Training Course</h2>
+                        <span id="training-status-badge"
+                            class="text-[10px] font-bold uppercase tracking-wide bg-slate-800 text-chess-muted px-2 py-1 rounded whitespace-nowrap">Idle</span>
+                    </div>
+                    <div class="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-chess-muted">Line Progress</span>
+                            <span id="line-progress-text" class="font-mono font-medium">0 / 0</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 mt-2 overflow-hidden">
+                            <div id="line-progress-bar"
+                                class="bg-chess-accent h-2 rounded-full transition-all duration-300 w-0"></div>
+                        </div>
+                    </div>
+                    <div id="moves-history"
+                        class="bg-slate-900 rounded-lg p-3 flex-grow min-h-[150px] overflow-y-auto text-sm font-mono text-chess-muted leading-relaxed flex flex-wrap gap-1 content-start shadow-inner border border-slate-800">
+                        <span class="italic text-slate-500">Moves will appear here.</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-700/50 mt-auto shrink-0">
+                        <button id="btn-hint"
+                            class="col-span-2 bg-blue-900/30 hover:bg-blue-800/50 text-blue-300 font-medium py-2 rounded-lg transition-colors border border-blue-800/50 hidden">
+                            Show Hint
+                        </button>
+                        <button id="btn-lichess"
+                            class="bg-slate-800 hover:bg-slate-700 text-chess-text font-medium py-2 rounded-lg transition-colors border border-slate-600 flex justify-center items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                            Lichess
+                        </button>
+                        <button id="btn-next-line"
+                            class="bg-chess-success hover:bg-emerald-500 text-white font-medium py-2 rounded-lg transition-shadow shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Skip Line
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Dependencies -->
+    <!-- Chess.js for move generation & validation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <!-- Main Application Logic (Uses storage.js via module import internally) -->
+    <script type="module" src="./app.js?v=4.4"></script>
+</body>
+
+</html>

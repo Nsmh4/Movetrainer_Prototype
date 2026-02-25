@@ -1,0 +1,103 @@
+/* Custom styles to enhance Chessground and overall UI */
+
+@keyframes bounce-slow {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 4s ease-in-out infinite;
+}
+
+/* Custom scrollbar for panel elements */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Make sure the board takes up the full container */
+cg-board,
+cg-helper,
+cg-container {
+    height: 100%;
+    width: 100%;
+}
+
+/*
+ * NOTE: Do NOT define piece background-image URLs here.
+ * The CDN stylesheet (chessground.cburnett.min.css) provides them
+ * using .cg-wrap piece.X.Y selectors with inline base64 data URIs.
+ * Any bare piece.X.Y override here would break them.
+ */
+
+/* Custom Highlight for the last move */
+.cg-board square.last-move {
+    background-color: rgba(155, 199, 0, 0.41) !important;
+}
+
+/* Custom Highlight for a wrong move */
+.cg-board square.wrong-move {
+    background-color: rgba(239, 68, 68, 0.6) !important;
+    animation: shake 0.4s;
+}
+
+/* Shake animation for incorrect moves */
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(5px);
+    }
+
+    50% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Custom arrow colors for "Learn" mode */
+.cg-shapes g {
+    opacity: 0.8;
+}
+
+/* Hide scrollbar for move list but keep functionality */
+#moves-history::-webkit-scrollbar {
+    width: 6px;
+}
+
+#moves-history::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#moves-history::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 20px;
+}
