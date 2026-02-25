@@ -18,6 +18,25 @@ const SRS_GRADES = {
 // INITIALIZATION
 if (!localStorage.getItem(STORAGE_KEY)) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+} else {
+    // Migration: Ensure all lines have a status field
+    const courses = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    let needsSave = false;
+    
+    courses.forEach(course => {
+        if (course.lines) {
+            course.lines.forEach(line => {
+                if (!line.hasOwnProperty('status')) {
+                    line.status = 'not-studied';
+                    needsSave = true;
+                }
+            });
+        }
+    });
+    
+    if (needsSave) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+    }
 }
 
 export const storage = {
@@ -43,6 +62,8 @@ export const storage = {
             lines: parsedLines.map((lineVars, idx) => ({
                 id: 'line_' + Date.now().toString() + '_' + idx,
                 sanSequence: lineVars.map(m => m.san),
+                // Study Status
+                status: 'not-studied', // 'not-studied' | 'studied' | 'mastered'
                 // SRS Data
                 repetitions: 0,
                 interval: 0,
@@ -132,6 +153,22 @@ export const storage = {
         const offset = line.interval === 0 ? -1000 : 0;
         line.nextReviewDate = Date.now() + (line.interval * millisecondsInDay) + offset;
 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+        return line;
+    },
+
+    /**
+     * Updates a line's study status
+     */
+    updateLineStatus(courseId, lineId, status) {
+        const courses = this.getAllCourses();
+        const course = courses.find(c => c.id === courseId);
+        if (!course) return;
+
+        const line = course.lines.find(l => l.id === lineId);
+        if (!line) return;
+
+        line.status = status; // 'not-studied', 'studied', 'mastered'
         localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
         return line;
     }
