@@ -13,6 +13,7 @@ window.appStorage = storage;
 const state = {
     currentView: 'landing', // Initial view
     activeCourse: null,
+    currentCourseId: null, // Track active course ID for marking studied
     mode: 'idle', // 'idle' | 'learn' | 'test'
     currentLineIndex: 0,
     currentMoveIndex: 0,
@@ -148,6 +149,26 @@ function init() {
     if (elements.btnEmptyAdd) elements.btnEmptyAdd.addEventListener('click', () => switchView('add-course'));
 
     elements.btnImportSave.addEventListener('click', handleSaveCourse);
+    
+    // File upload handler
+    const btnUploadPgn = document.getElementById('btn-upload-pgn');
+    const pgnFileInput = document.getElementById('pgn-file-input');
+    if (btnUploadPgn && pgnFileInput) {
+        btnUploadPgn.addEventListener('click', () => pgnFileInput.click());
+        pgnFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    elements.pgnInput.value = event.target.result;
+                    pgnFileInput.value = ''; // Reset for next upload
+                };
+                reader.onerror = () => alert('Error reading file');
+                reader.readAsText(file);
+            }
+        });
+    }
+    
     elements.btnBuilderSave.addEventListener('click', handleSaveBuilderRepertoire);
     elements.btnBuilderReset.addEventListener('click', resetBuilder);
     elements.builderColor.addEventListener('change', (e) => {
@@ -325,13 +346,28 @@ function showCourseDetails(courseId) {
     if (!course) return;
 
     elements.detailsCourseTitle.textContent = course.title;
-    elements.detailsCourseStats.textContent = `${course.lines.length} variations \u2022 ${course.color === 'white' ? 'White' : 'Black'} Repertoire`;
+    elements.detailsCourseStats.textContent = `${course.lines.length} variations • ${course.color === 'white' ? 'White' : 'Black'} Repertoire`;
 
     elements.detailsLinesList.innerHTML = '';
 
     course.lines.forEach((line, index) => {
         const lineEl = document.createElement('div');
-        lineEl.className = "bg-slate-900/50 rounded-lg p-3 text-sm font-mono text-chess-muted whitespace-nowrap overflow-x-auto border border-transparent hover:border-slate-700 transition-colors";
+        lineEl.className = "bg-slate-900/50 rounded-lg p-3 text-sm font-mono text-chess-muted overflow-x-auto border border-transparent hover:border-slate-600 transition-colors cursor-pointer group";
+        
+        // Status badge colors
+        let statusBadge = '';
+        let statusColor = 'bg-slate-700 text-slate-300';
+        let statusLabel = 'Not Studied';
+        
+        if (line.status === 'mastered') {
+            statusColor = 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50';
+            statusLabel = '✓ Mastered';
+        } else if (line.status === 'studied') {
+            statusColor = 'bg-blue-900/40 text-blue-300 border border-blue-700/50';
+            statusLabel = '✓ Studied';
+        }
+        
+        statusBadge = `<span class="inline-block ${statusColor} px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap">${statusLabel}</span>`;
 
         let sanPresentation = '';
         let currentPair = [];
@@ -347,11 +383,21 @@ function showCourseDetails(courseId) {
         }
 
         lineEl.innerHTML = `
-            <div class="flex items-center gap-3">
-                <span class="text-slate-600 font-bold select-none min-w-[20px] text-right">#${document.querySelectorAll('#details-lines-list > div').length + 1}</span>
-                <div class="flex-grow">${sanPresentation}</div>
+            <div class="flex items-center gap-3 justify-between">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <span class="text-slate-600 font-bold select-none min-w-[20px] text-right">#${index + 1}</span>
+                    <div class="flex-grow overflow-hidden">${sanPresentation}</div>
+                </div>
+                <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    ${statusBadge}
+                </div>
             </div>
         `;
+        
+        lineEl.addEventListener('click', () => {
+            startCourseTraining(courseId, index);
+        });
+        
         elements.detailsLinesList.appendChild(lineEl);
     });
 
@@ -366,7 +412,7 @@ function showCourseDetails(courseId) {
 
     elements.btnDetailsStudy.addEventListener('click', () => {
         console.log("Details study clicked", course.id);
-        startCourseTraining(course.id);
+        startCourseTraining(courseId);
     });
 
     elements.btnDetailsDelete.addEventListener('click', (e) => {
@@ -393,9 +439,17 @@ function handleSaveCourse() {
     }
 
     try {
+        console.log('===== PGN IMPORT DEBUG ====');
+        console.log('Raw PGN length:', rawPgn.length);
         const lines = extractVariationsFromPGN(rawPgn);
+        console.log('Parsed variations:', lines.length);
+        lines.slice(0, 10).forEach((line, i) => {
+            console.log(`Variation ${i + 1}:`, line.map(m => m.san).join(' '));
+        });
+        console.log('========================');
+        
         if (lines.length === 0) {
-            alert('No standard moves found in PGN.');
+            alert('No standard moves found in PGN. Check that moves are in algebraic notation (e.g., e4, Nf3, etc.)\n\nOpen browser console (F12) for debug info.');
             return;
         }
 
@@ -410,25 +464,29 @@ function handleSaveCourse() {
         elements.pgnInput.value = '';
         elements.courseTitle.value = '';
 
+        // Success feedback
+        showFeedback(`Successfully imported ${lines.length} variations!`, '', 'success');
+
         // Go back
-        switchView('dashboard');
+        setTimeout(() => switchView('dashboard'), 500);
 
     } catch (e) {
-        console.error(e);
-        alert('Error parsing PGN. Check format.');
+        console.error('PGN Parse Error:', e);
+        alert('Error parsing PGN. Check format. ' + e.message + '\n\nOpen browser console (F12) for details.');
     }
 }
 
 // --- TRAINING LOGIC ---
 
-function startCourseTraining(courseId) {
+function startCourseTraining(courseId, startLineIndex = 0) {
     state.activeCourse = storage.getCourse(courseId);
     state.trainingDueOnly = false;
     state.orientation = state.activeCourse.color;
+    state.currentCourseId = courseId; // Store for later use
 
     elements.trainingCourseTitle.textContent = state.activeCourse.title;
     switchView('training');
-    startLine(0);
+    startLine(startLineIndex);
 }
 
 function startDailyReview() {
@@ -441,6 +499,7 @@ function startDailyReview() {
     // We update orientation dynamically per line in SRS mode
     const firstDue = state.dueQueue[0];
     state.orientation = firstDue.courseColor;
+    state.currentCourseId = firstDue.courseId; // Track the course ID
 
     // Create a mock active course just for this line temporarily
     state.activeCourse = {
@@ -600,6 +659,23 @@ function handleLineComplete() {
     } else {
         showFeedback('Line Mastered!', 'Excellent memory.', 'success');
 
+        // Get the current line being studied
+        const currentLine = state.activeCourse.lines[state.currentLineIndex];
+        
+        // Auto-mark as studied when both learn and test are completed
+        if (state.currentCourseId && currentLine && currentLine.id) {
+            try {
+                if (typeof storage.updateLineStatus === 'function') {
+                    storage.updateLineStatus(state.currentCourseId, currentLine.id, 'studied');
+                    console.log('Line marked as studied:', currentLine.id);
+                } else {
+                    console.warn('updateLineStatus not available', storage);
+                }
+            } catch (e) {
+                console.error('Error marking line as studied:', e);
+            }
+        }
+
         // SRS Processing
         if (state.trainingDueOnly) {
             const completedLine = state.dueQueue[state.currentDueIndex];
@@ -607,7 +683,7 @@ function handleLineComplete() {
             storage.processReview(completedLine.courseId, completedLine.id, 4);
         } else {
             // Also process standard course progression as a Good grade if it was due or just learning
-            storage.processReview(state.activeCourse.id, state.activeCourse.lines[state.currentLineIndex].id, 4);
+            storage.processReview(state.currentCourseId, currentLine.id, 4);
         }
 
         setTimeout(() => {
@@ -624,6 +700,7 @@ function goToNextLine() {
             // Re-setup the mock active course
             const nextDue = state.dueQueue[state.currentDueIndex];
             state.orientation = nextDue.courseColor;
+            state.currentCourseId = nextDue.courseId; // Track the course ID
             state.activeCourse = { title: "Daily Review", lines: [nextDue] };
 
             startLine(0);
@@ -648,7 +725,6 @@ function openLichessAnalysis() {
     const url = `https://lichess.org/analysis/standard/${fenEncoded}?color=${colorStr}`;
     window.open(url, '_blank');
 }
-
 // --- UTILS & UI UPDATERS ---
 
 function getChessgroundDests(chess) {
@@ -789,14 +865,58 @@ function showFeedback(title, subtext, type = 'info') {
 // --- PGN PARSING UTILS (From V1) ---
 
 function extractVariationsFromPGN(pgnString) {
-    let body = pgnString.replace(/\[.*?\]\s*/g, '').trim();
-    body = body.replace(/\{.*?\}/g, '');
-    body = body.replace(/\$[0-9]+/g, '');
-    body = body.replace(/[?!]/g, '');
+    // Split by blank lines to handle multiple games
+    const games = pgnString.split(/\n\s*\n/);
+    let allLines = [];
 
+    for (const game of games) {
+        const lines = parseSingleGame(game);
+        allLines = allLines.concat(lines);
+    }
+
+    // Remove exact duplicates
+    const seenSignatures = new Set();
+    const uniqueLines = [];
+    
+    for (const line of allLines) {
+        const sig = line.map(m => m.san).join(' ');
+        if (!seenSignatures.has(sig)) {
+            seenSignatures.add(sig);
+            uniqueLines.push(line);
+        }
+    }
+
+    return uniqueLines;
+}
+
+function parseSingleGame(pgnString) {
+    // Remove headers/metadata
+    let body = pgnString.replace(/\[.*?\]\s*/g, '').trim();
+    
+    // Remove comments
+    body = body.replace(/\{.*?\}/g, '');
+    
+    // Remove annotations like $1, $2, etc
+    body = body.replace(/\$[0-9]+/g, '');
+    
+    // Remove ! and ? (they're not part of actual move notation)
+    body = body.replace(/[?!]+/g, '');
+
+    // Normalize spacing around parentheses
     let spacedBody = body.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ').trim();
+    
+    // Tokenize
     const rawTokens = spacedBody.split(/\s+/).filter(t => t.length > 0);
-    const tokens = rawTokens.filter(t => !/^\d+\.+$/.test(t) && !/^\d+$/.test(t));
+    
+    // Filter out move numbers (e.g. '1.', '2.', '10.')
+    // But keep moves that look like 'a4', 'e4', 'Nf3', 'O-O', etc.
+    const tokens = rawTokens.filter(t => {
+        // Skip move numbers with dots
+        if (/^\d+\.+$/.test(t)) return false;
+        // Skip game end markers
+        if (['1-0', '0-1', '1/2-1/2', '*'].includes(t)) return false;
+        return true;
+    });
 
     const results = [];
 
@@ -808,18 +928,18 @@ function extractVariationsFromPGN(pgnString) {
             const token = tokensList[i];
 
             if (token === '(') {
+                // Found a variation - branch point is at the position before the last move
                 const variationBranchPoint = currentPath.slice(0, currentPath.length - 1);
                 let variationEnd = findClosingParens(tokensList, i);
                 if (variationEnd !== -1) {
                     const variationTokens = tokensList.slice(i + 1, variationEnd);
+                    // Recursively explore the variation
                     explore(variationTokens, variationBranchPoint);
                     i = variationEnd + 1;
                 } else {
-                    break;
+                    i++;
                 }
             } else if (token === ')') {
-                i++;
-            } else if (['1-0', '0-1', '1/2-1/2', '*'].includes(token)) {
                 i++;
             } else {
                 currentPath.push(token);
@@ -827,6 +947,7 @@ function extractVariationsFromPGN(pgnString) {
             }
         }
 
+        // Record this line if it has moves
         if (currentPath.length > 0) {
             results.push([...currentPath]);
         }
@@ -844,34 +965,50 @@ function extractVariationsFromPGN(pgnString) {
 
     explore(tokens, []);
 
-    const richLines = [];
-    const seenSignatures = new Set();
+    // Validate and convert to move objects
+    const validLines = [];
+    let invalidCount = 0;
 
-    for (const rawMoveSequence of results) {
+    for (let idx = 0; idx < results.length; idx++) {
+        const rawMoveSequence = results[idx];
         const c = new Chess();
         const lineVars = [];
         let validLine = true;
+        let failedAt = null;
 
-        for (const san of rawMoveSequence) {
-            const moveObj = c.move(san);
-            if (moveObj) {
-                lineVars.push(moveObj);
-            } else {
+        for (const moveStr of rawMoveSequence) {
+            try {
+                const moveObj = c.move(moveStr, { sloppy: true }); // sloppy=true allows more formats
+                if (moveObj) {
+                    lineVars.push(moveObj);
+                } else {
+                    // Invalid move - skip this line
+                    validLine = false;
+                    failedAt = moveStr;
+                    break;
+                }
+            } catch (e) {
                 validLine = false;
+                failedAt = moveStr;
                 break;
             }
         }
 
         if (validLine && lineVars.length > 0) {
-            const sig = lineVars.map(m => m.san).join(' ');
-            if (!seenSignatures.has(sig)) {
-                seenSignatures.add(sig);
-                richLines.push(lineVars);
+            validLines.push(lineVars);
+        } else if (rawMoveSequence.length > 0) {
+            invalidCount++;
+            if (invalidCount <= 3) {
+                console.warn(`Variation ${idx + 1} invalid at move "${failedAt}":`, rawMoveSequence.join(' '));
             }
         }
     }
 
-    return richLines;
+    if (invalidCount > 3) {
+        console.warn(`... and ${invalidCount - 3} more invalid variations`);
+    }
+
+    return validLines;
 }
 
 // --- REPERTOIRE BUILDER (Tree Builder) ---
