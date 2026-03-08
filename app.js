@@ -351,9 +351,9 @@ function showCourseDetails(courseId) {
 
     course.lines.forEach((line, index) => {
         const lineEl = document.createElement('div');
-        lineEl.className = "bg-slate-900/50 rounded-lg p-3 text-sm font-mono text-chess-muted overflow-x-auto border border-transparent hover:border-slate-600 transition-colors cursor-pointer group";
 
-        // Status badge colors
+        // Visual distinction based on study status
+        let lineClasses = 'rounded-lg p-3 text-sm font-mono overflow-x-auto transition-colors cursor-pointer group ';
         let statusBadge = '';
         let statusColor = 'bg-slate-700 text-slate-300';
         let statusLabel = 'Not Studied';
@@ -361,10 +361,16 @@ function showCourseDetails(courseId) {
         if (line.status === 'mastered') {
             statusColor = 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50';
             statusLabel = '✓ Mastered';
+            lineClasses += 'bg-emerald-950/30 border border-emerald-800/40 text-emerald-200/70 hover:border-emerald-600';
         } else if (line.status === 'studied') {
             statusColor = 'bg-blue-900/40 text-blue-300 border border-blue-700/50';
             statusLabel = '✓ Studied';
+            lineClasses += 'bg-blue-950/30 border border-blue-800/40 text-blue-200/70 hover:border-blue-600';
+        } else {
+            lineClasses += 'bg-slate-900/50 border border-transparent text-chess-muted hover:border-slate-600';
         }
+
+        lineEl.className = lineClasses;
 
         statusBadge = `<span class="inline-block ${statusColor} px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap">${statusLabel}</span>`;
 
@@ -387,7 +393,7 @@ function showCourseDetails(courseId) {
                     <span class="text-slate-600 font-bold select-none min-w-[20px] text-right">#${index + 1}</span>
                     <div class="flex-grow overflow-hidden">${sanPresentation}</div>
                 </div>
-                <div class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex-shrink-0">
                     ${statusBadge}
                 </div>
             </div>
@@ -514,7 +520,13 @@ function startLine(lineIndex) {
 
     state.currentLineIndex = lineIndex;
     state.currentMoveIndex = 0;
-    state.mode = 'learn'; // Always start with learn mode
+
+    // During Daily Review, skip learn mode — go straight to test (no arrows)
+    if (state.trainingDueOnly) {
+        state.mode = 'test';
+    } else {
+        state.mode = 'learn';
+    }
 
     state.chess.reset();
     updateBoardUI();
@@ -527,7 +539,11 @@ function startLine(lineIndex) {
     updateModeBadge();
     renderMovesHistory();
 
-    showFeedback('Learn Mode', 'Follow the arrows to learn the line.', 'info');
+    if (state.mode === 'test') {
+        showFeedback('Review Mode', 'Play the line from memory!', 'info');
+    } else {
+        showFeedback('Learn Mode', 'Follow the arrows to learn the line.', 'info');
+    }
     processNextMove();
 }
 
