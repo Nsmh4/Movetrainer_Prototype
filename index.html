@@ -246,11 +246,21 @@
                 <p class="text-chess-muted">Paste a PGN containing one or multiple variations to create a course.</p>
             </header>
             <div class="bg-chess-panel border border-slate-700/50 rounded-xl p-6 flex flex-col gap-5 shadow-xl">
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Course Title</label>
-                    <input type="text" id="course-title"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-all"
-                        placeholder="e.g. My Lifetime e4 Repertoire">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Course Title</label>
+                        <input type="text" id="course-title"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-all"
+                            placeholder="e.g. My Lifetime e4 Repertoire">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Play As</label>
+                        <select id="course-color"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-all text-sm font-semibold">
+                            <option value="white">White</option>
+                            <option value="black">Black</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">PGN Data</label>
@@ -258,8 +268,16 @@
                         class="w-full h-48 bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm font-mono text-chess-muted focus:outline-none focus:border-chess-accent focus:ring-1 focus:ring-chess-accent transition-colors resize-none"
                         placeholder="1. e4 e5 2. Nf3 (2. f4 exf4) 2... Nc6"></textarea>
                     <div class="mt-3 flex gap-3">
-                        <button id="btn-upload-pgn" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /><path d="M6 9h12M5 6l1 12c0 1 1 2 2 2h8c1 0 2-1 2-2l1-12" /><path d="M9 6V4c0-1 1-2 2-2h2c1 0 2 1 2 2v2" /></svg>
+                        <button id="btn-upload-pgn"
+                            class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM17 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                <path d="M6 9h12M5 6l1 12c0 1 1 2 2 2h8c1 0 2-1 2-2l1-12" />
+                                <path d="M9 6V4c0-1 1-2 2-2h2c1 0 2 1 2 2v2" />
+                            </svg>
                             Upload PGN File
                         </button>
                         <input type="file" id="pgn-file-input" accept=".pgn" style="display: none;">
