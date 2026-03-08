@@ -57,6 +57,7 @@ const elements = {
     // Add Course
     pgnInput: document.getElementById('pgn-input'),
     courseTitle: document.getElementById('course-title'),
+    courseColor: document.getElementById('course-color'),
     btnImportSave: document.getElementById('btn-import-save'),
 
     // Course Details
@@ -131,8 +132,6 @@ function init() {
         });
     }
 
-    // Initial suggestions for start pos
-    fetchBuilderSuggestions();
 
     // Subscriptions
     elements.navDashboard.addEventListener('click', () => switchView('dashboard'));
@@ -149,7 +148,7 @@ function init() {
     if (elements.btnEmptyAdd) elements.btnEmptyAdd.addEventListener('click', () => switchView('add-course'));
 
     elements.btnImportSave.addEventListener('click', handleSaveCourse);
-    
+
     // File upload handler
     const btnUploadPgn = document.getElementById('btn-upload-pgn');
     const pgnFileInput = document.getElementById('pgn-file-input');
@@ -168,7 +167,7 @@ function init() {
             }
         });
     }
-    
+
     elements.btnBuilderSave.addEventListener('click', handleSaveBuilderRepertoire);
     elements.btnBuilderReset.addEventListener('click', resetBuilder);
     elements.builderColor.addEventListener('change', (e) => {
@@ -353,12 +352,12 @@ function showCourseDetails(courseId) {
     course.lines.forEach((line, index) => {
         const lineEl = document.createElement('div');
         lineEl.className = "bg-slate-900/50 rounded-lg p-3 text-sm font-mono text-chess-muted overflow-x-auto border border-transparent hover:border-slate-600 transition-colors cursor-pointer group";
-        
+
         // Status badge colors
         let statusBadge = '';
         let statusColor = 'bg-slate-700 text-slate-300';
         let statusLabel = 'Not Studied';
-        
+
         if (line.status === 'mastered') {
             statusColor = 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50';
             statusLabel = '✓ Mastered';
@@ -366,7 +365,7 @@ function showCourseDetails(courseId) {
             statusColor = 'bg-blue-900/40 text-blue-300 border border-blue-700/50';
             statusLabel = '✓ Studied';
         }
-        
+
         statusBadge = `<span class="inline-block ${statusColor} px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap">${statusLabel}</span>`;
 
         let sanPresentation = '';
@@ -393,11 +392,11 @@ function showCourseDetails(courseId) {
                 </div>
             </div>
         `;
-        
+
         lineEl.addEventListener('click', () => {
             startCourseTraining(courseId, index);
         });
-        
+
         elements.detailsLinesList.appendChild(lineEl);
     });
 
@@ -447,16 +446,14 @@ function handleSaveCourse() {
             console.log(`Variation ${i + 1}:`, line.map(m => m.san).join(' '));
         });
         console.log('========================');
-        
+
         if (lines.length === 0) {
             alert('No standard moves found in PGN. Check that moves are in algebraic notation (e.g., e4, Nf3, etc.)\n\nOpen browser console (F12) for debug info.');
             return;
         }
 
-        // Infer color based on first move
-        let color = 'white'; // default
-        // In a real app we'd let them pick, but let's stick to default white for now 
-        // unless they specify in the UI (which we can add later).
+        // Use the selected color from the UI
+        let color = elements.courseColor ? elements.courseColor.value : 'white';
 
         storage.saveCourse(title, color, lines);
 
@@ -661,7 +658,7 @@ function handleLineComplete() {
 
         // Get the current line being studied
         const currentLine = state.activeCourse.lines[state.currentLineIndex];
-        
+
         // Auto-mark as studied when both learn and test are completed
         if (state.currentCourseId && currentLine && currentLine.id) {
             try {
@@ -877,7 +874,7 @@ function extractVariationsFromPGN(pgnString) {
     // Remove exact duplicates
     const seenSignatures = new Set();
     const uniqueLines = [];
-    
+
     for (const line of allLines) {
         const sig = line.map(m => m.san).join(' ');
         if (!seenSignatures.has(sig)) {
@@ -892,22 +889,22 @@ function extractVariationsFromPGN(pgnString) {
 function parseSingleGame(pgnString) {
     // Remove headers/metadata
     let body = pgnString.replace(/\[.*?\]\s*/g, '').trim();
-    
+
     // Remove comments
     body = body.replace(/\{.*?\}/g, '');
-    
+
     // Remove annotations like $1, $2, etc
     body = body.replace(/\$[0-9]+/g, '');
-    
+
     // Remove ! and ? (they're not part of actual move notation)
     body = body.replace(/[?!]+/g, '');
 
     // Normalize spacing around parentheses
     let spacedBody = body.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ').trim();
-    
+
     // Tokenize
     const rawTokens = spacedBody.split(/\s+/).filter(t => t.length > 0);
-    
+
     // Filter out move numbers (e.g. '1.', '2.', '10.')
     // But keep moves that look like 'a4', 'e4', 'Nf3', 'O-O', etc.
     const tokens = rawTokens.filter(t => {
